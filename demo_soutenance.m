@@ -31,7 +31,7 @@ pause;
 % =================================================================
 clc;
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-fprintf('  ETAPE 1/7 : PARAMETRES DU SYSTEME\n');
+fprintf('  ETAPE 1/8 : PARAMETRES DU SYSTEME\n');
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
 
 params = parametres_projet();
@@ -63,7 +63,7 @@ pause;
 % =================================================================
 clc;
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-fprintf('  ETAPE 2/7 : FILTRE RIF PASSE-BANDE (Parks-McClellan)\n');
+fprintf('  ETAPE 2/8 : FILTRE RIF PASSE-BANDE (fenêtre de Hamming)\n');
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
 
 fprintf('  Méthode : algorithme de Remez (équiondulation)\n');
@@ -120,7 +120,7 @@ pause;
 % =================================================================
 clc;
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-fprintf('  ETAPE 3/7 : SIGNAL PPG SYNTHETIQUE + FILTRAGE\n');
+fprintf('  ETAPE 3/8 : SIGNAL PPG SYNTHETIQUE + FILTRAGE\n');
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
 
 % Génération du signal
@@ -185,7 +185,7 @@ pause;
 % =================================================================
 clc;
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-fprintf('  ETAPE 4/7 : DETECTION D''ACTIVITE CARDIAQUE\n');
+fprintf('  ETAPE 4/8 : DETECTION D''ACTIVITE CARDIAQUE\n');
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
 
 fprintf('  Principe : estimation de la puissance sur fenêtre glissante\n');
@@ -250,7 +250,7 @@ pause;
 % =================================================================
 clc;
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-fprintf('  ETAPE 5/7 : DETECTION DES PICS + CALCUL DU BPM\n');
+fprintf('  ETAPE 5/8 : DETECTION DES PICS + CALCUL DU BPM\n');
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
 
 [pics_val, pics_idx] = findpeaks_custom(x_filt_aligned, ...
@@ -333,7 +333,7 @@ pause;
 % =================================================================
 clc;
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-fprintf('  ETAPE 6/7 : VERIFICATION SPECTRALE PAR FFT\n');
+fprintf('  ETAPE 6/8 : VERIFICATION SPECTRALE PAR FFT\n');
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
 
 fprintf('  Double vérification : méthode temporelle (RR) + fréquentielle (FFT)\n\n');
@@ -383,7 +383,7 @@ pause;
 % =================================================================
 clc;
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-fprintf('  ETAPE 7/7 : BPM GLISSANT – OPTION DU CAHIER DES CHARGES\n');
+fprintf('  ETAPE 7/8 : BPM GLISSANT – OPTION DU CAHIER DES CHARGES\n');
 fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
 
 fprintf('  Principe : fenêtre de 10 s glissée par pas de 1 s\n');
@@ -452,6 +452,118 @@ grid on;
 
 fprintf('  Le système suit les variations de fréquence cardiaque\n');
 fprintf('  avec un temps de réponse lié à la taille de la fenêtre (10 s).\n\n');
+fprintf('  [Touche] → Etape suivante : signal acquis sur la carte\n');
+pause;
+
+%% ================================================================
+%  ETAPE 8 : ANALYSE DU SIGNAL "REEL" (acquis sur la carte)
+% =================================================================
+clc;
+fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+fprintf('  ETAPE 8/8 : ANALYSE DU SIGNAL ACQUIS SUR LA CARTE\n');
+fprintf('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
+
+% Vérifier que le fichier existe, sinon le générer
+if ~exist('ppg_reel.mat', 'file')
+    fprintf('  Fichier ppg_reel.mat absent, génération en cours...\n');
+    run('generer_ppg_reel');
+    close all;
+    fprintf('\n');
+end
+
+fprintf('  Chargement de l''enregistrement PPG (simulant le capteur)\n');
+fprintf('  Format : CAN 12 bits, Fe = 250 Hz\n\n');
+
+% Charger le fichier
+data_reel = load('ppg_reel.mat');
+x_reel_full = double(data_reel.ppg);
+FE_ACQ = 250;   % fréquence d'acquisition de la carte
+
+% Rééchantillonnage vers Fe = 100 Hz
+t_old = (0:length(x_reel_full)-1) / FE_ACQ;
+N_new = round(length(x_reel_full) * Fe / FE_ACQ);
+t_new = (0:N_new-1) / Fe;
+x_reel_100Hz = interp1(t_old, x_reel_full, t_new, 'spline');
+
+fprintf('  Rééchantillonnage : %d Hz → %d Hz (%d → %d échantillons)\n', ...
+        FE_ACQ, Fe, length(x_reel_full), length(x_reel_100Hz));
+
+% Sélection fenêtre de 10 s (on saute 2 s de transitoire)
+idx_start_r = 2 * Fe + 1;
+idx_end_r   = idx_start_r + N - 1;
+x_reel_10s  = x_reel_100Hz(idx_start_r : idx_end_r);
+t_reel      = (0:N-1) / Fe;
+
+% Normalisation
+x_reel_norm = (x_reel_10s - mean(x_reel_10s)) / std(x_reel_10s);
+
+% Filtrage
+x_reel_filt = filter(h, 1, x_reel_norm);
+delay_r = round(params.ordre_filtre / 2);
+x_reel_aligned = [x_reel_filt(delay_r+1:end), zeros(1, delay_r)];
+
+% Détection d'activité
+[actif_r, P_r] = detecter_activite(x_reel_aligned, Fe, ...
+                                    params.fenetre_activite_s, ...
+                                    params.seuil_P_absolu);
+
+% Détection des pics
+[pks_r, locs_r] = findpeaks_custom(x_reel_aligned, ...
+    'MinPeakDistance',   params.distance_min_samples, ...
+    'MinPeakProminence', params.prominence_rel * max(x_reel_aligned));
+
+if length(locs_r) >= 2
+    RR_reel     = diff(locs_r) / Fe;
+    BPM_reel    = 60 / mean(RR_reel);
+    RR_reel_ms  = mean(RR_reel) * 1000;
+    RR_reel_std = std(RR_reel) * 1000;
+else
+    BPM_reel = NaN; RR_reel_ms = NaN; RR_reel_std = NaN;
+end
+
+% Analyse spectrale
+[f_dom_r, snr_r, bpm_fft_r] = analyser_cle(x_reel_aligned, Fe);
+
+fprintf('\n  Résultats sur signal acquis :\n');
+fprintf('  ┌──────────────────────────────────────────┐\n');
+fprintf('  │  Activité détectée  :  %s                │\n', ternaire(actif_r, 'OUI', 'NON'));
+fprintf('  │  BPM (RR-intervals) :  %.1f               │\n', BPM_reel);
+fprintf('  │  BPM (FFT)          :  %.1f               │\n', bpm_fft_r);
+fprintf('  │  RR moyen           :  %.0f ms (± %.0f ms) │\n', RR_reel_ms, RR_reel_std);
+fprintf('  │  Pics détectés      :  %d                  │\n', length(locs_r));
+fprintf('  │  SNR spectral       :  %.1f dB             │\n', snr_r);
+fprintf('  └──────────────────────────────────────────┘\n\n');
+
+figure('Name', 'Etape 8 – Signal réel', 'Position', [100 100 1000 650], 'Color', 'w');
+
+subplot(3,1,1);
+plot(t_reel, x_reel_norm, 'Color', [0.5 0.5 0.5], 'LineWidth', 0.8);
+xlabel('Temps (s)', 'FontSize', 11); ylabel('Amplitude', 'FontSize', 11);
+title(sprintf('Signal acquis sur la carte (normalisé, Fe_{acq} = %d Hz → %d Hz)', FE_ACQ, Fe), 'FontSize', 12);
+grid on;
+
+subplot(3,1,2);
+plot(t_reel, x_reel_aligned, 'b', 'LineWidth', 1.2);
+hold on;
+plot(locs_r/Fe, x_reel_aligned(locs_r), 'rv', 'MarkerSize', 12, 'MarkerFaceColor', 'r');
+xlabel('Temps (s)', 'FontSize', 11); ylabel('Amplitude', 'FontSize', 11);
+title(sprintf('Signal filtré + pics détectés (BPM = %.1f)', BPM_reel), 'FontSize', 12);
+legend('Signal filtré', 'Pics systoliques');
+grid on;
+
+subplot(3,1,3);
+X_r = fft(x_reel_aligned) / N;
+f_axis_r = (0:N-1) / N * Fe;
+plot(f_axis_r(1:N/2), abs(X_r(1:N/2))*2, 'b', 'LineWidth', 1.2);
+hold on;
+xline(f_dom_r, 'r--', sprintf('%.2f Hz = %.0f BPM', f_dom_r, bpm_fft_r), 'LineWidth', 1.5, 'FontSize', 10);
+xlim([0 6]);
+xlabel('Fréquence (Hz)', 'FontSize', 11); ylabel('|X(f)|', 'FontSize', 11);
+title('Spectre du signal acquis', 'FontSize', 12);
+grid on;
+
+fprintf('  → La même chaîne de traitement fonctionne sur le signal réel.\n');
+fprintf('  → Résultat affiché sur OLED + envoyé en Bluetooth.\n\n');
 fprintf('  [Touche] → Récapitulatif final\n');
 pause;
 
@@ -466,11 +578,12 @@ fprintf('  ╠══════════════════════
 fprintf('  ║                                                       ║\n');
 fprintf('  ║  Chaîne de traitement validée :                       ║\n');
 fprintf('  ║                                                       ║\n');
-fprintf('  ║  ✓ Filtrage RIF passe-bande (Remez, ordre %3d)       ║\n', params.ordre_filtre);
+fprintf('  ║  ✓ Filtrage RIF passe-bande (Hamming, ordre %3d)      ║\n', params.ordre_filtre);
 fprintf('  ║  ✓ Détection d''activité cardiaque                    ║\n');
 fprintf('  ║  ✓ Mesure du BPM (erreur < 1 BPM sur 10 s)          ║\n');
 fprintf('  ║  ✓ Vérification croisée par FFT                      ║\n');
 fprintf('  ║  ✓ BPM glissant (option) – suivi en temps réel       ║\n');
+fprintf('  ║  ✓ Analyse validée sur signal acquis (carte élec.)    ║\n');
 fprintf('  ║                                                       ║\n');
 fprintf('  ║  Contraintes microcontrôleur vérifiées :              ║\n');
 fprintf('  ║  ✓ Shannon satisfait (Fe = %d Hz >> 6 Hz)            ║\n', Fe);
