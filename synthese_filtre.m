@@ -1,7 +1,7 @@
 %% ============================================================
 %  SYNTHESE_FILTRE.M
-%  Synthèse du filtre RIF passe-bande par la méthode de Parks-McClellan
-%  (algorithme de Remez, équiondulation).
+%  Synthèse du filtre RIF passe-bande par méthode fenêtrée
+%  (fenêtre de Hamming, SANS Signal Processing Toolbox).
 %  Groupe G2D – APP Signal 2025/2026
 % ============================================================
 function [h, ordre] = synthese_filtre(params)
@@ -18,49 +18,67 @@ function [h, ordre] = synthese_filtre(params)
 %   ordre : ordre effectif du filtre (longueur de h moins 1)
 %
 % METHODE :
-%   Utilisation de firpmord() pour estimer l'ordre minimum puis de firpm()
-%   (Parks-McClellan) pour la synthèse. En repli, fir1() avec une fenêtre
-%   de Hamming si firpm n'est pas disponible.
+%   Filtre passe-bande = différence de deux passe-bas (sinc fenêtré).
+%   Fenêtre de Hamming calculée manuellement (0.54 - 0.46*cos).
+%   L'ordre est estimé par la formule de Kaiser.
 
     Fe  = params.Fe;
-    fs1 = params.fs1;   fp1 = params.fp1;
-    fp2 = params.fp2;   fs2 = params.fs2;
+    fp1 = params.fp1;   fp2 = params.fp2;
+    fs1 = params.fs1;   fs2 = params.fs2;
+    Astop = params.Astop;
 
-    % Conversion des amplitudes dB → linéaire
-    dev_pass = (10^(params.Apass/20) - 1) / (10^(params.Apass/20) + 1);
-    dev_stop = 10^(-params.Astop/20);
+    % ── Estimation de l'ordre par la formule de Kaiser ────
+    delta_f1 = (fp1 - fs1) / Fe;
+    delta_f2 = (fs2 - fp2) / Fe;
+    delta_f  = min(delta_f1, delta_f2);
 
-    try
-        % --- Estimation de l'ordre minimum ---
-        [n_est, fo, ao, w] = firpmord([fs1 fp1 fp2 fs2], [0 1 0], ...
-            [dev_stop dev_pass dev_stop], Fe);
-
-        % On arrondit à l'entier pair supérieur (filtre de type I)
-        n_est = 2 * ceil(n_est / 2);
-
-        % Synthèse par Parks-McClellan
-        h = firpm(n_est, fo, ao, w);
-        ordre = length(h) - 1;
-
-    catch
-        % Repli si Signal Processing Toolbox non complète
-        ordre_fallback = 100;
-        h = fir1(ordre_fallback, [fp1 fp2] / (Fe/2), 'bandpass', hamming(ordre_fallback+1));
-        ordre = ordre_fallback;
-        warning('firpm indisponible, repli fir1 avec ordre %d', ordre);
+    if Astop > 21
+        ordre = ceil((Astop - 7.95) / (14.36 * delta_f));
+    else
+        ordre = ceil(0.9222 / delta_f);
     end
 
-    % Vérification du gabarit a posteriori (optionnel, affiché si pas de sortie)
-    if nargout == 0
-        [H, f] = freqz(h, 1, 4096, Fe);
-        Hdb = 20*log10(abs(H) + 1e-12);
-        fprintf('Filtre RIF : ordre %d\n', ordre);
-        fprintf('  Atténuation max en bande atténuée basse : %.1f dB\n', ...
-                max(Hdb(f <= fs1)));
-        fprintf('  Atténuation max en bande atténuée haute : %.1f dB\n', ...
-                max(Hdb(f >= fs2)));
-        fprintf('  Ondulation max en bande passante        : %.3f dB\n', ...
-                max(Hdb(f >= fp1 & f <= fp2)) - min(Hdb(f >= fp1 & f <= fp2)));
+    % Arrondir à l'entier pair (filtre de type I, phase linéaire)
+    if mod(ordre, 2) ~= 0
+        ordre = ordre + 1;
     end
+
+    M = ordre;
+    L = M + 1;
+
+    % ── Fréquences de coupure normalisées (0 à 0.5) ──────
+    fc1 = (fs1 + fp1) / 2 / Fe;
+    fc2 = (fp2 + fs2) / 2 / Fe;
+
+    % ── Fenêtre de Hamming (manuelle) ─────────────────────
+    n = 0:M;
+    w = 0.54 - 0.46 * cos(2*pi*n / M);
+
+    % ── Réponse impulsionnelle idéale (sinc fenêtré) ──────
+    n_centered = n - M/2;
+    h_lp1 = zeros(1, L);
+    h_lp2 = zeros(1, L);
+
+    for k = 1:L
+        if n_centered(k) == 0
+            h_lp1(k) = 2 * fc1;
+            h_lp2(k) = 2 * fc2;
+        else
+            h_lp1(k) = sin(2*pi*fc1*n_centered(k)) / (pi*n_centered(k));
+            h_lp2(k) = sin(2*pi*fc2*n_centered(k)) / (pi*n_centered(k));
+        end
+    end
+
+    % Passe-bande = différence des deux passe-bas
+    h_bp = h_lp2 - h_lp1;
+
+    % Application de la fenêtre
+    h = h_bp .* w;
+
+    % Normalisation (gain unitaire au centre de la bande passante)
+    f_centre = (fp1 + fp2) / 2;
+    omega_c = 2 * pi * f_centre / Fe;
+    gain = abs(sum(h .* exp(-1j * omega_c * (0:M))));
+    h = h / gain;
 
 end

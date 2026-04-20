@@ -34,7 +34,7 @@ function [bpm_t, t_centres] = bpm_glissant(x_raw, Fe, win_s, hop_s)
 
     params = parametres_projet();
     h = params.h_filtre;
-    delay = params.ordre_filtre / 2;
+    delay = round(params.ordre_filtre / 2);
 
     x_raw = x_raw(:)';
     N_win = round(win_s * Fe);
@@ -56,7 +56,7 @@ function [bpm_t, t_centres] = bpm_glissant(x_raw, Fe, win_s, hop_s)
         xf  = filter(h, 1, xw);
         xa  = [xf(delay+1:end), zeros(1, delay)];
 
-        [~, pks] = findpeaks(xa, ...
+        [~, pks] = findpeaks_custom(xa, ...
             'MinPeakDistance',   params.distance_min_samples, ...
             'MinPeakProminence', params.prominence_rel * max(xa));
 

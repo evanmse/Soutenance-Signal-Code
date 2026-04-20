@@ -82,7 +82,7 @@ if ~actif
 end
 
 % ── 5. Détection des pics R ──────────────────────────────
-[pics_val, pics_idx] = findpeaks(x_filt_aligned, ...
+[pics_val, pics_idx] = findpeaks_custom(x_filt_aligned, ...
     'MinPeakDistance',   params.distance_min_samples, ...
     'MinPeakProminence', params.prominence_rel * max(x_filt_aligned));
 
@@ -133,7 +133,7 @@ title(sprintf('Filtré + pics (BPM = %.1f)', BPM_estime));
 grid on;
 
 subplot(3,2,3);
-[H, f] = freqz(h, 1, 4096, Fe);
+[H, f] = freqz_custom(h, 1, 4096, Fe);
 plot(f, 20*log10(abs(H)+1e-12), 'b', 'LineWidth', 1.2);
 hold on;
 xline(params.fp1, 'g--'); xline(params.fp2, 'g--');

@@ -71,8 +71,11 @@ Fe = params.Fe;
 
 if FE_ACQ ~= Fe
     fprintf('2. REECHANTILLONNAGE : %d Hz -> %d Hz\n', FE_ACQ, Fe);
-    % resample() intègre déjà un filtre anti-repliement
-    x_100Hz = resample(x_raw_full, Fe, FE_ACQ);
+    % Rééchantillonnage par interpolation (sans Signal Processing Toolbox)
+    t_old = (0:length(x_raw_full)-1) / FE_ACQ;
+    N_new = round(length(x_raw_full) * Fe / FE_ACQ);
+    t_new = (0:N_new-1) / Fe;
+    x_100Hz = interp1(t_old, x_raw_full, t_new, 'spline');
     fprintf('   Nouveau nb échantillons : %d\n\n', length(x_100Hz));
 else
     x_100Hz = x_raw_full;
@@ -136,7 +139,7 @@ end
 % ──────────────────────────────────────────────────────────
 % 7. Détection des pics R
 % ──────────────────────────────────────────────────────────
-[pics_val, pics_idx] = findpeaks(x_filt_aligned, ...
+[pics_val, pics_idx] = findpeaks_custom(x_filt_aligned, ...
     'MinPeakDistance',   params.distance_min_samples, ...
     'MinPeakProminence', params.prominence_rel * max(x_filt_aligned));
 

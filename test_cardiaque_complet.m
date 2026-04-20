@@ -56,10 +56,10 @@ for i = 1 : length(fc_tests)
 
         % -- Traitement --
         x_f = filter(h, 1, x);
-        delay = params.ordre_filtre / 2;
+        delay = round(params.ordre_filtre / 2);
         x_aligned = [x_f(delay+1:end), zeros(1, delay)];
 
-        [~, pks] = findpeaks(x_aligned, ...
+        [~, pks] = findpeaks_custom(x_aligned, ...
             'MinPeakDistance',   params.distance_min_samples, ...
             'MinPeakProminence', params.prominence_rel * max(x_aligned));
 
@@ -131,8 +131,8 @@ for a = 1:length(fc_benchmark)
             P_b = mean(ppg.^2) / 10^(snr_range(b)/10);
             x = ppg + sqrt(P_b) * randn(1, N);
             x_f = filter(h, 1, x);
-            x_a = [x_f(params.ordre_filtre/2+1:end), zeros(1, params.ordre_filtre/2)];
-            [~, pks] = findpeaks(x_a, ...
+            x_a = [x_f(round(params.ordre_filtre/2)+1:end), zeros(1, round(params.ordre_filtre/2))];
+            [~, pks] = findpeaks_custom(x_a, ...
                 'MinPeakDistance',   params.distance_min_samples, ...
                 'MinPeakProminence', params.prominence_rel * max(x_a));
             if length(pks) >= 2
