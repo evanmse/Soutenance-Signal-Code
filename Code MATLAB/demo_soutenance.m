@@ -375,6 +375,10 @@ fprintf('  • BPM par RR-intervals :  %.1f BPM\n', BPM_estime);
 fprintf('  • Concordance          :  %.2f BPM d''écart\n', abs(bpm_fft - BPM_estime));
 fprintf('  • SNR spectral estimé  :  %.1f dB\n\n', snr_db_est);
 
+% Simulation envoi Bluetooth après analyse complète
+fprintf('  >> Envoi Bluetooth vers smartphone :\n');
+bluetooth_stm32(BPM_estime, true, RR_moy_ms, snr_db_est);
+
 fprintf('  [Touche] → Etape suivante : BPM glissant (option)\n');
 pause;
 
@@ -564,6 +568,74 @@ grid on;
 
 fprintf('  → La même chaîne de traitement fonctionne sur le signal réel.\n');
 fprintf('  → Résultat affiché sur OLED + envoyé en Bluetooth.\n\n');
+
+% Simulation envoi Bluetooth du signal réel
+fprintf('  >> Envoi Bluetooth (signal acquis) :\n');
+bluetooth_stm32(BPM_reel, actif_r, RR_reel_ms, snr_r);
+
+% ── Démonstration multi-scénarios ────────────────────────
+fprintf('\n  >> Test automatique sur TOUS les scénarios générés :\n\n');
+
+fichiers_test = {'ppg_reel.mat', 'ppg_effort.mat', 'ppg_bradycardie.mat', ...
+                 'ppg_tachycardie.mat', 'ppg_variable.mat', 'ppg_bruit.mat'};
+noms_test = {'Repos (72 BPM)', 'Effort (110 BPM)', 'Bradycardie (45 BPM)', ...
+             'Tachycardie (160 BPM)', 'FC variable', 'Bruit seul'};
+
+fprintf('  ┌──────────────────────────┬─────────┬─────────┬───────────┐\n');
+fprintf('  │ Scénario                  │ BPM     │ Détecté │ BT envoyé │\n');
+fprintf('  ├──────────────────────────┼─────────┼─────────┼───────────┤\n');
+
+for sc_idx = 1:length(fichiers_test)
+    fic = fichiers_test{sc_idx};
+    if ~exist(fic, 'file')
+        fprintf('  │ %-24s │   ---   │   ---   │    ---    │\n', noms_test{sc_idx});
+        continue;
+    end
+    d_sc = load(fic);
+    x_sc = double(d_sc.ppg); x_sc = x_sc(:)';
+    t_sc_old = (0:length(x_sc)-1) / 250;
+    N_sc_new = round(length(x_sc) * Fe / 250);
+    t_sc_new = (0:N_sc_new-1) / Fe;
+    x_sc_re = interp1(t_sc_old, x_sc, t_sc_new, 'spline');
+
+    % Fenêtre de 10 s
+    if length(x_sc_re) >= N + 2*Fe
+        x_sc_w = x_sc_re(2*Fe+1 : 2*Fe+N);
+    elseif length(x_sc_re) >= N
+        x_sc_w = x_sc_re(1:N);
+    else
+        fprintf('  │ %-24s │ trop court                     │\n', noms_test{sc_idx});
+        continue;
+    end
+
+    x_sc_n = (x_sc_w - mean(x_sc_w)) / (std(x_sc_w) + eps);
+    x_sc_f = filter(h, 1, x_sc_n);
+    dl = round(params.ordre_filtre / 2);
+    x_sc_a = [x_sc_f(dl+1:end), zeros(1, dl)];
+
+    [act_sc, ~] = detecter_activite(x_sc_a, Fe, params.fenetre_activite_s, params.seuil_P_absolu);
+    [~, l_sc] = findpeaks_custom(x_sc_a, 'MinPeakDistance', params.distance_min_samples, ...
+                                 'MinPeakProminence', params.prominence_rel * max(x_sc_a));
+
+    if act_sc && length(l_sc) >= 2
+        bpm_sc = 60 / mean(diff(l_sc)/Fe);
+        rr_sc = mean(diff(l_sc)/Fe) * 1000;
+        det_str = '  OUI  ';
+    else
+        bpm_sc = 0; rr_sc = 0;
+        det_str = '  NON  ';
+    end
+
+    if bpm_sc > 0
+        bpm_str = sprintf('%5.0f  ', bpm_sc);
+    else
+        bpm_str = '  ---  ';
+    end
+    fprintf('  │ %-24s │ %s │ %s │     ✓     │\n', noms_test{sc_idx}, bpm_str, det_str);
+end
+
+fprintf('  └──────────────────────────┴─────────┴─────────┴───────────┘\n\n');
+
 fprintf('  [Touche] → Récapitulatif final\n');
 pause;
 
